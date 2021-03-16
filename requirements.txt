@@ -1,0 +1,4 @@
+ampache
+pyxdg
+PyGObject
+configparser
