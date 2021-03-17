@@ -266,6 +266,7 @@
   <object class="GtkImage" id="voldownimage">
     <property name="visible">True</property>
     <property name="can-focus">False</property>
+    <property name="tooltip-text" translatable="yes">-5%</property>
     <property name="icon-name">audio-volume-low-symbolic</property>
   </object>
   <object class="GtkImage" id="volupimage">
@@ -294,6 +295,7 @@
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>
+                <property name="tooltip-text" translatable="yes">Send playlist to Localplay</property>
                 <property name="image">playnowimage</property>
                 <property name="always-show-image">True</property>
               </object>
@@ -337,7 +339,7 @@
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>
-                <property name="tooltip-text" translatable="yes">Clear the server Playlist</property>
+                <property name="tooltip-text" translatable="yes">Clear the Localplay playlist</property>
                 <property name="image">clearimage</property>
                 <property name="always-show-image">True</property>
               </object>
@@ -469,6 +471,7 @@
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>
+                <property name="tooltip-text" translatable="yes">+5%</property>
                 <property name="image">volupimage</property>
                 <property name="always-show-image">True</property>
               </object>
@@ -509,7 +512,7 @@
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="label" translatable="yes">Track:</property>
-                <property name="width-chars">20</property>
+                <property name="width-chars">10</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -521,6 +524,9 @@
               <object class="GtkLabel" id="tracklabel">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
+                <property name="wrap">True</property>
+                <property name="ellipsize">end</property>
+                <property name="max-width-chars">58</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -545,7 +551,7 @@
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="label" translatable="yes">State:</property>
-                <property name="width-chars">20</property>
+                <property name="width-chars">10</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -576,12 +582,13 @@
           <object class="GtkBox">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
+            <property name="margin-bottom">3</property>
             <child>
               <object class="GtkButton" id="refreshbutton">
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
                 <property name="receives-default">True</property>
-                <property name="tooltip-text" translatable="yes">Fetch server Playlists</property>
+                <property name="tooltip-text" translatable="yes">Fetch status and playlists</property>
                 <property name="image">reloadimage</property>
                 <property name="always-show-image">True</property>
               </object>

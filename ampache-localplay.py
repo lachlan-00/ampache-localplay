@@ -72,6 +72,8 @@ class AmpacheLocalplay(GObject.Object, Peas.Activatable, PeasGtk.Configurable):
         self.random = None
         self.track = ''
         self.track_title = ''
+        self.track_artist = ''
+        self.track_album = ''
 
         # ampache details
         self.ampache_url = None
@@ -220,7 +222,7 @@ class AmpacheLocalplay(GObject.Object, Peas.Activatable, PeasGtk.Configurable):
 
     def set_status(self, text):
         self.statusbar.set_text(text)
-        self.tracklabel.set_text(self.track + ' - ' + self.track_title)
+        self.tracklabel.set_text(self.track + ' - ' + self.track_title + ' - ' + self.track_album + ' - ' + self.track_artist)
         self.statelabel.set_text(self.state)
         self.volumelabel.set_text(str(int(self.volume * 100)) + '%')
         run_events()
@@ -337,9 +339,23 @@ class AmpacheLocalplay(GObject.Object, Peas.Activatable, PeasGtk.Configurable):
             self.volume = float(int(status[0][0][0][1].text) / 100)
             self.repeat = status[0][0][0][2].text
             self.random = status[0][0][0][3].text
-            if status[0][0][0][4].text and status[0][0][0][5].text:
-                self.track = status[0][0][0][4].text
-                self.track_title = status[0][0][0][5].text
+            try:
+                if status[0][0][0][4].text and status[0][0][0][5].text:
+                    self.track = status[0][0][0][4].text
+                    self.track_title = status[0][0][0][5].text
+            except IndexError:
+                self.track = ''
+                self.track_title = ''
+            try:
+                if status[0][0][0][6].text:
+                    self.track_artist = status[0][0][0][6].text
+            except IndexError:
+                self.track_artist = ''
+            try:
+                if status[0][0][0][7].text:
+                    self.track_album = status[0][0][0][7].text
+            except IndexError:
+                self.track_album = ''
             self.update_status(state)
 
 
