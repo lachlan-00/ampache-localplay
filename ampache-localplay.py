@@ -64,6 +64,8 @@ class AmpacheLocalplay(GObject.Object, Peas.Activatable, PeasGtk.Configurable):
         self.tracklabel = None
         self.playlistcombo = None
         self.playlistlist = None
+        self.statelabel = None
+        self.volumelabel = None
         self.state = 'unknown'
         self.volume = 0
         self.repeat = None
@@ -93,7 +95,9 @@ class AmpacheLocalplay(GObject.Object, Peas.Activatable, PeasGtk.Configurable):
     def do_deactivate(self):
         """ Deactivate the program """
         print('deactivating ampache-localplay')
+        run_events()
         Gio.Application.get_default()
+        return
 
     def ampache_auth(self, key):
         """ ping ampache for auth key """
@@ -317,12 +321,12 @@ class AmpacheLocalplay(GObject.Object, Peas.Activatable, PeasGtk.Configurable):
             self.volume = round(self.volume - .05, 2)
             self.update_status('volume_down')
 
-    def update_status(self, state=False):
+    def update_status(self, state: str = False):
         if not state:
             state = self.state
         self.set_status(state)
 
-    def localplay_status(self, state=False):
+    def localplay_status(self, state: str = False):
         if self._check_session():
             self.track_title = ''
             self.track_artist = ''

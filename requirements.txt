@@ -1,5 +1,5 @@
-ampache
 pyxdg
 PyGObject
 configparser
+requests
 xdg

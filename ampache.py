@@ -228,18 +228,17 @@ class API(object):
             text_file.close()
 
     @staticmethod
-    def encrypt_password(password: str, time: int):
+    def encrypt_password(password: str, current_time: int):
         """ encrypt_password
 
             This function can be used to encrypt your password into the accepted format.
 
             INPUTS
-            * password = (string) unencrypted apikey
-            * user    = (string) username
-            * time    = (integer) linux time
+            * password = (string) unencrypted password string
+            * time     = (integer) linux time
         """
         key = hashlib.sha256(password.encode()).hexdigest()
-        passphrase = str(time) + key
+        passphrase = str(current_time) + key
         sha_signature = hashlib.sha256(passphrase.encode()).hexdigest()
         return sha_signature
 
@@ -273,6 +272,8 @@ class API(object):
         except urllib.error.URLError:
             return False
         except urllib.error.HTTPError:
+            return False
+        except ValueError:
             return False
         ampache_response = result.read()
         result.close()
@@ -697,9 +698,9 @@ class API(object):
             This returns the songs of a specified album
 
             INPUTS
-            * filter_id   = (integer) $album_id
-            * offset      = (integer) //optional
-            * limit       = (integer) //optional
+            * filter_id = (integer) $album_id
+            * offset    = (integer) //optional
+            * limit     = (integer) //optional
         """
         ampache_url = self.AMPACHE_URL + '/server/' + self.AMPACHE_API + '.server.php'
         data = {'action': 'album_songs',
@@ -722,10 +723,10 @@ class API(object):
             This returns the genres (Tags) based on the specified filter
 
             INPUTS
-            * filter_str  = (string) search the name of a genre //optional
-            * exact       = (integer) 0,1, if true filter is exact rather then fuzzy //optional
-            * offset      = (integer) //optional
-            * limit       = (integer) //optional
+            * filter_str = (string) search the name of a genre //optional
+            * exact      = (integer) 0,1, if true filter is exact rather then fuzzy //optional
+            * offset     = (integer) //optional
+            * limit      = (integer) //optional
         """
         ampache_url = self.AMPACHE_URL + '/server/' + self.AMPACHE_API + '.server.php'
         data = {'action': 'genres',
@@ -752,7 +753,7 @@ class API(object):
             This returns a single genre based on UID
 
             INPUTS
-            * filter_id   = (integer) $genre_id
+            * filter_id = (integer) $genre_id
         """
         ampache_url = self.AMPACHE_URL + '/server/' + self.AMPACHE_API + '.server.php'
         data = {'action': 'genre',
@@ -796,9 +797,9 @@ class API(object):
             This returns the albums associated with the genre in question
 
             INPUTS
-            * filter_id   = (integer) $genre_id
-            * offset      = (integer) //optional
-            * limit       = (integer) //optional
+            * filter_id = (integer) $genre_id
+            * offset    = (integer) //optional
+            * limit     = (integer) //optional
         """
         ampache_url = self.AMPACHE_URL + '/server/' + self.AMPACHE_API + '.server.php'
         data = {'action': 'genre_albums',
@@ -820,9 +821,9 @@ class API(object):
             returns the songs for this genre
 
             INPUTS
-            * filter_id   = (integer) $genre_id
-            * offset      = (integer) //optional
-            * limit       = (integer) //optional
+            * filter_id = (integer) $genre_id
+            * offset    = (integer) //optional
+            * limit     = (integer) //optional
         """
         ampache_url = self.AMPACHE_URL + '/server/' + self.AMPACHE_API + '.server.php'
         data = {'action': 'genre_songs',
@@ -845,12 +846,12 @@ class API(object):
             Returns songs based on the specified filter_str
 
             INPUTS
-            * filter_str  = (string) search the name of a song //optional
-            * exact       = (integer) 0,1, if true filter is exact rather then fuzzy //optional
-            * add         = (integer) UNIXTIME() //optional
-            * update      = (integer) UNIXTIME() //optional
-            * offset      = (integer) //optional
-            * limit       = (integer) //optional
+            * filter_str = (string) search the name of a song //optional
+            * exact      = (integer) 0,1, if true filter is exact rather then fuzzy //optional
+            * add        = (integer) UNIXTIME() //optional
+            * update     = (integer) UNIXTIME() //optional
+            * offset     = (integer) //optional
+            * limit      = (integer) //optional
         """
         ampache_url = self.AMPACHE_URL + '/server/' + self.AMPACHE_API + '.server.php'
         data = {'action': 'songs',
@@ -883,7 +884,7 @@ class API(object):
             returns a single song
 
             INPUTS
-            * filter_id   = (integer) $song_id
+            * filter_id = (integer) $song_id
         """
         ampache_url = self.AMPACHE_URL + '/server/' + self.AMPACHE_API + '.server.php'
         data = {'action': 'song',
@@ -2855,7 +2856,6 @@ class API(object):
         if not ampache_response:
             return False
         return self.return_data(ampache_response)
-
 
     """
     --------------------
