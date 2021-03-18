@@ -39,6 +39,8 @@ class API(object):
         self.AMPACHE_DEBUG = False
         self.AMPACHE_URL = ''
         self.AMPACHE_SESSION = ''
+        self.AMPACHE_USER = ''
+        self.AMPACHE_KEY = ''
         # Test colors for printing
         self.OKGREEN = '\033[92m'
         self.WARNING = '\033[93m'
@@ -76,6 +78,36 @@ class API(object):
         else:
             print('AMPACHE_DEBUG' + f": {self.WARNING}disabled{self.ENDC}")
         self.AMPACHE_DEBUG = mybool
+
+    def set_user(self, myuser: str):
+        """ set_user
+
+            set user for connection
+
+            INPUTS
+            * myuser = (string) 'xml'|'json'
+        """
+        self.AMPACHE_USER = myuser
+
+    def set_key(self, mykey: str):
+        """ set_key
+
+            set api key
+
+            INPUTS
+            * mykey = (string) 'xml'|'json'
+        """
+        self.AMPACHE_API = mykey
+
+    def set_url(self, myurl: str):
+        """ set_url
+
+            set the ampache url
+
+            INPUTS
+            * myurl = (string) 'xml'|'json'
+        """
+        self.AMPACHE_URL = myurl
 
     def test_result(self, result, title):
         """ set_debug
@@ -194,6 +226,22 @@ class API(object):
             text_file = open(filename, "w")
             text_file.write(json.dumps(json_data))
             text_file.close()
+
+    @staticmethod
+    def encrypt_password(password: str, time: int):
+        """ encrypt_password
+
+            This function can be used to encrypt your password into the accepted format.
+
+            INPUTS
+            * password = (string) unencrypted apikey
+            * user    = (string) username
+            * time    = (integer) linux time
+        """
+        key = hashlib.sha256(password.encode()).hexdigest()
+        passphrase = str(time) + key
+        sha_signature = hashlib.sha256(passphrase.encode()).hexdigest()
+        return sha_signature
 
     @staticmethod
     def encrypt_string(api_key: str, username: str):

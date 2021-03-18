@@ -23,6 +23,7 @@
 import configparser
 import gi
 import os
+import time
 
 import ampache
 
@@ -77,6 +78,7 @@ class AmpacheLocalplay(GObject.Object, Peas.Activatable, PeasGtk.Configurable):
         self.ampache_url = None
         self.ampache_user = None
         self.ampache_apikey = None
+        self.ampache_password = None
         self.ampache_session = False
         self.do_activate()
 
@@ -98,6 +100,7 @@ class AmpacheLocalplay(GObject.Object, Peas.Activatable, PeasGtk.Configurable):
         self.ampache_user = self.conf.get(C, 'ampache_user')
         self.ampache_url = self.conf.get(C, 'ampache_url')
         self.ampache_apikey = self.conf.get(C, 'ampache_api')
+        self.ampache_password = self.conf.get(C, 'ampache_password')
         if self.ampache_url[:8] == 'https://' or self.ampache_url[:7] == 'http://':
             if key:
                 ping = self.ampache.ping(self.ampache_url, key)
@@ -106,7 +109,12 @@ class AmpacheLocalplay(GObject.Object, Peas.Activatable, PeasGtk.Configurable):
                     self.update_status('ping')
                     self.ampache_session = ping
                     return ping
-            auth = self.ampache.handshake(self.ampache_url, self.ampache.encrypt_string(self.ampache_apikey, self.ampache_user))
+            if self.ampache_password:
+                mytime = int(time.time())
+                passphrase = self.ampache.encrypt_password(self.ampache_password, mytime)
+                auth = self.ampache.handshake(self.ampache_url, passphrase, self.ampache_user, mytime)
+            else:
+                auth = self.ampache.handshake(self.ampache_url, self.ampache.encrypt_string(self.ampache_apikey, self.ampache_user))
             if auth:
                 self.update_status('handshake')
                 print('handshake successful')
@@ -125,10 +133,18 @@ class AmpacheLocalplay(GObject.Object, Peas.Activatable, PeasGtk.Configurable):
             conffile.write('[conf]\n' +
                            'ampache_url = \n' +
                            'ampache_user = \n' +
-                           'ampache_api = \n')
+                           'ampache_api = \n' +
+                           'ampache_password = \n')
             conffile.close()
         # read the conf file
         self.conf.read(self.configfile)
+        if not self.conf.has_option(C, 'ampache_password'):
+            # set default path for the user
+            datafile = open(self.configfile, 'w')
+            self.conf.set(C, 'ampache_password', '')
+            self.conf.write(datafile)
+            datafile.close()
+            self.conf.read(self.configfile)
         return
 
     def do_create_main_window(self):
@@ -182,6 +198,7 @@ class AmpacheLocalplay(GObject.Object, Peas.Activatable, PeasGtk.Configurable):
         build.get_object('savebutton').connect('clicked', lambda x: self.save_config(build))
         build.get_object('ampache_url').set_text(self.conf.get(C, 'ampache_url'))
         build.get_object('ampache_user').set_text(self.conf.get(C, 'ampache_user'))
+        build.get_object('ampache_password').set_text(self.conf.get(C, 'ampache_password'))
         build.get_object('ampache_api').set_text(self.conf.get(C, 'ampache_api'))
         preferences.show_all()
         preferences.show()
@@ -207,9 +224,11 @@ class AmpacheLocalplay(GObject.Object, Peas.Activatable, PeasGtk.Configurable):
         self.ampache_url = builder.get_object('ampache_url').get_text()
         self.ampache_user = builder.get_object('ampache_user').get_text()
         self.ampache_apikey = builder.get_object('ampache_api').get_text()
+        self.ampache_password = builder.get_object('ampache_password').get_text()
         self.conf.set(C, 'ampache_url', self.ampache_url)
         self.conf.set(C, 'ampache_user', self.ampache_user)
         self.conf.set(C, 'ampache_api', self.ampache_apikey)
+        self.conf.set(C, 'ampache_password', self.ampache_password)
         datafile = open(self.configfile, 'w')
         self.conf.write(datafile)
         datafile.close()
