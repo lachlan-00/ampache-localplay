@@ -9,14 +9,14 @@
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.    
-    
- This program is distributed in the hope that it will be useful,    
- but WITHOUT ANY WARRANTY; without even the implied warranty of    
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the    
- GNU General Public License for more details.    
+ (at your option) any later version.
 
- You should have received a copy of the GNU General Public License    
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
@@ -51,16 +51,13 @@ class AmpacheLocalplay(GObject.Object, Peas.Activatable, PeasGtk.Configurable):
 
     def __init__(self):
         GObject.Object.__init__(self)
+        self.ampache = ampache.API()
+        self.ampache.set_format('json')
         self.plugin_info = 'ampache-localplay'
         self.conf = configparser.RawConfigParser()
         self.configfile = CONFIGFILE
         self.ui_file = UIFILE
         self.window = None
-        self.db = None
-        self.player = None
-        self.source = None
-        self.queue = None
-        self.app = None
 
         self.statusbar = None
         self.tracklabel = None
@@ -71,6 +68,7 @@ class AmpacheLocalplay(GObject.Object, Peas.Activatable, PeasGtk.Configurable):
         self.repeat = None
         self.random = None
         self.track = ''
+        self.total_tracks = ''
         self.track_title = ''
         self.track_artist = ''
         self.track_album = ''
@@ -83,7 +81,7 @@ class AmpacheLocalplay(GObject.Object, Peas.Activatable, PeasGtk.Configurable):
         self.do_activate()
 
     def do_activate(self):
-        """ Activate the plugin """
+        """ Activate the program """
         print('activating ampache-localplay')
         self._check_configfile()
         # load the main window
@@ -91,17 +89,9 @@ class AmpacheLocalplay(GObject.Object, Peas.Activatable, PeasGtk.Configurable):
         run_events()
 
     def do_deactivate(self):
-        """ Deactivate the plugin """
+        """ Deactivate the program """
         print('deactivating ampache-localplay')
         Gio.Application.get_default()
-        del self.shell
-        del self.rbdb
-        del self.db
-        del self.player
-        del self.source
-        del self.queue
-        del self.app
-        del self.elapsed_changed_id
 
     def ampache_auth(self, key):
         """ ping ampache for auth key """
@@ -110,13 +100,13 @@ class AmpacheLocalplay(GObject.Object, Peas.Activatable, PeasGtk.Configurable):
         self.ampache_apikey = self.conf.get(C, 'ampache_api')
         if self.ampache_url[:8] == 'https://' or self.ampache_url[:7] == 'http://':
             if key:
-                ping = ampache.ping(self.ampache_url, key)
+                ping = self.ampache.ping(self.ampache_url, key)
                 if ping:
                     # ping successful
                     self.update_status('ping')
                     self.ampache_session = ping
                     return ping
-            auth = ampache.handshake(self.ampache_url, ampache.encrypt_string(self.ampache_apikey, self.ampache_user))
+            auth = self.ampache.handshake(self.ampache_url, self.ampache.encrypt_string(self.ampache_apikey, self.ampache_user))
             if auth:
                 self.update_status('handshake')
                 print('handshake successful')
@@ -137,25 +127,7 @@ class AmpacheLocalplay(GObject.Object, Peas.Activatable, PeasGtk.Configurable):
                            'ampache_user = \n' +
                            'ampache_api = \n')
             conffile.close()
-        else:
-            conf = configparser.RawConfigParser()
-            conf.read(self.configfile)
-            if not conf.has_section('home'):
-                conf.add_section('home')
-            if not conf.has_section('root_x'):
-                conf.add_section('root_x')
-            if not conf.has_section('root_y'):
-                conf.add_section('root_y')
-            if not conf.has_section('width'):
-                conf.add_section('width')
-            if not conf.has_section('height'):
-                conf.add_section('height')
-            # set default path for the user
-            self.conf.read(self.configfile)
-            datafile = open(self.configfile, 'w')
-            self.conf.write(datafile)
-            datafile.close()
-        # read the conf file            
+        # read the conf file
         self.conf.read(self.configfile)
         return
 
@@ -193,7 +165,7 @@ class AmpacheLocalplay(GObject.Object, Peas.Activatable, PeasGtk.Configurable):
         self.playlistcombo.add_attribute(cell, 'text', 1)
         self.getplaylists()
         self.localplay_status()
-        
+
         # check for config file and info
         self.window.show_all()
         self.window.show()
@@ -222,7 +194,10 @@ class AmpacheLocalplay(GObject.Object, Peas.Activatable, PeasGtk.Configurable):
 
     def set_status(self, text):
         self.statusbar.set_text(text)
-        self.tracklabel.set_text(self.track + ' - ' + self.track_title + ' - ' + self.track_album + ' - ' + self.track_artist)
+        joinstring = '/'
+        if self.total_tracks == '':
+            joinstring = ''
+        self.tracklabel.set_text(self.track + joinstring + self.total_tracks + ' - ' + self.track_title + ' - ' + self.track_album + ' - ' + self.track_artist)
         self.statelabel.set_text(self.state)
         self.volumelabel.set_text(str(int(self.volume * 100)) + '%')
         run_events()
@@ -254,7 +229,7 @@ class AmpacheLocalplay(GObject.Object, Peas.Activatable, PeasGtk.Configurable):
         if self._check_session():
             self.playlistlist.clear()
             print("refresh playlists")
-            status = ampache.playlists(self.ampache_url, self.ampache_session, False, False, 0, 0, 'json')
+            status = self.ampache.playlists(False, False, 0, 0)
             for child in status['playlist']:
                 self.playlistlist.append([child['id'], child['name']])
             self.localplay_status('refresh')
@@ -264,22 +239,23 @@ class AmpacheLocalplay(GObject.Object, Peas.Activatable, PeasGtk.Configurable):
 
     def delete_all(self):
         if self._check_session():
-            ampache.localplay(self.ampache_url, self.ampache_session, 'delete_all')
+            self.ampache.localplay('delete_all')
             self.update_status('delete_all')
+            self.tracklabel.set_text('0/0 -  -  - ')
 
     def play_now(self):
         if self._check_session():
             listid = self.playlistchanged()
             if not listid:
                 return False
-            status = ampache.playlist_songs(self.ampache_url, self.ampache_session, listid, 0, 0, 'json')
+            status = self.ampache.playlist_songs(listid, 0, 0)
             songs = []
             for child in status['song']:
                 songs.append(child['id'])
             self.delete_all()
             count = 0
             for song_id in songs:
-                ampache.localplay(self.ampache_url, self.ampache_session, 'add', song_id, 'song', 0)
+                self.ampache.localplay('add', song_id, 'song', 0)
                 if count == 0:
                     self.localplay_play()
                     count = 1
@@ -287,38 +263,38 @@ class AmpacheLocalplay(GObject.Object, Peas.Activatable, PeasGtk.Configurable):
 
     def localplay_previous(self):
         if self._check_session():
-            ampache.localplay(self.ampache_url, self.ampache_session, 'previous')
+            self.ampache.localplay('previous')
             self.localplay_status('previous')
 
     def localplay_stop(self):
         if not self.state == 'stop' and self._check_session():
-            ampache.localplay(self.ampache_url, self.ampache_session, 'stop')
+            self.ampache.localplay('stop')
             self.localplay_status('stop')
 
     def localplay_pause(self):
         if not self.state == 'pause' and self._check_session():
-            ampache.localplay(self.ampache_url, self.ampache_session, 'pause')
+            self.ampache.localplay('pause')
             self.localplay_status('pause')
 
     def localplay_play(self):
         if not self.state == 'play' and self._check_session():
-            ampache.localplay(self.ampache_url, self.ampache_session, 'play')
+            self.ampache.localplay('play')
             self.localplay_status('play')
 
     def localplay_next(self):
         if self._check_session():
-            ampache.localplay(self.ampache_url, self.ampache_session, 'next')
+            self.ampache.localplay('next')
             self.localplay_status('next')
 
     def localplay_volume_up(self):
         if self.volume < 1.00 and self._check_session():
-            ampache.localplay(self.ampache_url, self.ampache_session, 'volume_up')
+            self.ampache.localplay('volume_up')
             self.volume = round(self.volume + .05, 2)
             self.update_status('volume_up')
 
     def localplay_volume_down(self):
         if self.volume > 0.00 and self._check_session():
-            ampache.localplay(self.ampache_url, self.ampache_session, 'volume_down')
+            self.ampache.localplay('volume_down')
             self.volume = round(self.volume - .05, 2)
             self.update_status('volume_down')
 
@@ -328,33 +304,50 @@ class AmpacheLocalplay(GObject.Object, Peas.Activatable, PeasGtk.Configurable):
         self.set_status(state)
 
     def localplay_status(self, state=False):
-        """
-          #def localplay(ampache_url: str, ampache_api: str, command, oid=False, otype=False, clear=0, api_format: str = 'xml'):
-          #* command     = (string) 'next', 'prev', 'stop', 'play', 'pause', 'add', 'volume_up',
-          #                         'volume_down', 'volume_mute', 'delete_all', 'skip', 'status'
-        """
         if self._check_session():
-            status = ampache.localplay(self.ampache_url, self.ampache_session, 'status')
-            self.state = status[0][0][0][0].text
-            self.volume = float(int(status[0][0][0][1].text) / 100)
-            self.repeat = status[0][0][0][2].text
-            self.random = status[0][0][0][3].text
+            self.track_title = ''
+            self.track_artist = ''
+            self.track_album = ''
+            status = self.ampache.localplay('status')
+            self.state = status['localplay']['command']['status']['state']
+            self.volume = float(int(status['localplay']['command']['status']['volume']) / 100)
+            self.repeat = status['localplay']['command']['status']['repeat']
+            self.random = status['localplay']['command']['status']['random']
             try:
-                if status[0][0][0][4].text and status[0][0][0][5].text:
-                    self.track = status[0][0][0][4].text
-                    self.track_title = status[0][0][0][5].text
+                songs = self.ampache.localplay_songs()['localplay_songs']
+                self.total_tracks = str(len(songs))
+            except KeyError:
+                self.total_tracks = ''
+            if self.total_tracks == '0':
+                self.track = '0'
+            else:
+                try:
+                    if status['localplay']['command']['status']['track']:
+                        self.track = str(status['localplay']['command']['status']['track'])
+                except IndexError:
+                    self.track = ''
+                except KeyError:
+                    self.track = ''
+            try:
+                if status['localplay']['command']['status']['track_title']:
+                    self.track_title = status['localplay']['command']['status']['track_title']
             except IndexError:
-                self.track = ''
+                self.track_title = ''
+            except KeyError:
                 self.track_title = ''
             try:
-                if status[0][0][0][6].text:
-                    self.track_artist = status[0][0][0][6].text
+                if status['localplay']['command']['status']['track_artist']:
+                    self.track_artist = status['localplay']['command']['status']['track_artist']
             except IndexError:
                 self.track_artist = ''
+            except KeyError:
+                self.track_artist = ''
             try:
-                if status[0][0][0][7].text:
-                    self.track_album = status[0][0][0][7].text
+                if status['localplay']['command']['status']['track_album']:
+                    self.track_album = status['localplay']['command']['status']['track_album']
             except IndexError:
+                self.track_album = ''
+            except KeyError:
                 self.track_album = ''
             self.update_status(state)
 
