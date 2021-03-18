@@ -2,3 +2,4 @@ ampache
 pyxdg
 PyGObject
 configparser
+xdg
