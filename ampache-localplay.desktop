@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Name=ampache-localplay
+Comment=Ampache Localplay Controller
+GenericName=ampache-localplay
+Type=Application
+Exec=/usr/share/ampache-localplay/ampachelocalplay.py
+Terminal=false
+X-MultipleArgs=false
+Icon=/usr/share/ampache-localplay/ampache-localplay.png
+StartupNotify=true
+StartupWMClass=ampache-localplay
+Categories=GNOME;GTK;AudioVideo;Applications;

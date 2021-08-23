@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# launch ampache-localplay
+python3 /usr/share/ampache-localplay/ampachelocalplay.py

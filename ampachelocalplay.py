@@ -20,12 +20,11 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import ampache
 import configparser
 import gi
 import os
 import time
-
-import ampache
 
 gi.require_version('Peas', '1.0')
 gi.require_version('PeasGtk', '1.0')
@@ -109,6 +108,10 @@ class AmpacheLocalplay(GObject.Object, Peas.Activatable, PeasGtk.Configurable):
             if key:
                 ping = self.ampache.ping(self.ampache_url, key)
                 if ping:
+                    if not self.ampache.AMPACHE_URL:
+                        self.ampache.AMPACHE_URL = self.ampache_url
+                    if not self.ampache.AMPACHE_SESSION:
+                        self.ampache.AMPACHE_SESSION = self.ampache_session
                     # ping successful
                     self.update_status('ping')
                     self.ampache_session = ping
@@ -122,6 +125,10 @@ class AmpacheLocalplay(GObject.Object, Peas.Activatable, PeasGtk.Configurable):
             if auth:
                 self.update_status('handshake')
                 print('handshake successful')
+                if not self.ampache.AMPACHE_URL:
+                    self.ampache.AMPACHE_URL = self.ampache_url
+                if not self.ampache.AMPACHE_SESSION:
+                    self.ampache.AMPACHE_SESSION = self.ampache_session
                 self.ampache_session = auth
                 return auth
         return False

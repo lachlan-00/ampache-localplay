@@ -1,4 +1,0 @@
-#!/bin/sh
-
-# launch ampache-localplay
-./ampache-localplay.py

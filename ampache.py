@@ -173,6 +173,29 @@ class API(object):
         return id_list
 
     @staticmethod
+    def get_object_list(data, field: str, data_format: str = 'xml'):
+        """ get_id_list
+
+            return a list of objects from the data matching your field stirng
+
+            INPUTS
+            * data        = (mixed) XML or JSON from the API
+            * field       = (string) field you are searching for
+            * data_format = (string) 'xml','json'
+        """
+        id_list = list()
+        if data_format == 'xml':
+            return data.findall(field)
+        else:
+            try:
+                for data_object in data[field]:
+                    id_list.append(data_object['id'])
+            except TypeError:
+                for data_object in data:
+                    id_list.append(data_object[0])
+        return id_list
+
+    @staticmethod
     def write_xml(xmlstr, filename: str):
         """ write_xml
 
@@ -305,7 +328,7 @@ class API(object):
 
             INPUTS
             * ampache_url = (string) Full Ampache URL e.g. 'https://music.com.au'
-            * ampache_api = (string) encrypted apikey
+            * ampache_api = (string) encrypted apikey OR password if using password auth
             * user        = (string) username //optional
             * timestamp   = (integer) UNIXTIME() //optional
             * version     = (string) //optional
@@ -377,6 +400,8 @@ class API(object):
         if self.AMPACHE_API == 'json':
             json_data = json.loads(ampache_response.decode('utf-8'))
             if 'session_expire' in json_data:
+                if not self.AMPACHE_URL:
+                    self.AMPACHE_URL = ampache_url
                 self.AMPACHE_SESSION = ampache_api
                 return ampache_api
             else:
@@ -389,6 +414,9 @@ class API(object):
                 return False
             try:
                 tree.find('session_expire').text
+                if not self.AMPACHE_URL:
+                    self.AMPACHE_URL = ampache_url
+                self.AMPACHE_SESSION = ampache_api
             except AttributeError:
                 return False
             return ampache_api
@@ -917,8 +945,7 @@ class API(object):
             return False
         return self.return_data(ampache_response)
 
-    def playlists(self, filter_str: str = False,
-                  exact: int = False, offset=0, limit=0):
+    def playlists(self, filter_str: str = False, exact: int = False, offset=0, limit=0):
         """ playlists
             MINIMUM_API_VERSION=380001
 
@@ -2093,6 +2120,12 @@ class API(object):
                 'songmbid': mbtitle,
                 'albummbid': mbalbum,
                 'artistmdib': mbartist}
+        if not mbtitle:
+            data.pop('songmbid')
+        if not mbalbum:
+            data.pop('albummbid')
+        if not mbartist:
+            data.pop('artistmdib')
         data = urllib.parse.urlencode(data)
         full_url = ampache_url + '?' + data
         ampache_response = self.fetch_url(full_url, self.AMPACHE_API, 'scrobble')
@@ -2853,6 +2886,73 @@ class API(object):
         data = urllib.parse.urlencode(data)
         full_url = ampache_url + '?' + data
         ampache_response = self.fetch_url(full_url, self.AMPACHE_API, 'bookmark_delete')
+        if not ampache_response:
+            return False
+        return self.return_data(ampache_response)
+
+    def deleted_songs(self, offset=0, limit=0):
+        """ deleted_songs
+            MINIMUM_API_VERSION=500000
+
+            Returns deleted_song
+
+            INPUTS
+            * offset      = (integer) //optional
+            * limit       = (integer) //optional
+        """
+        ampache_url = self.AMPACHE_URL + '/server/' + self.AMPACHE_API + '.server.php'
+        data = {'action': 'deleted_songs',
+                'auth': self.AMPACHE_SESSION,
+                'offset': str(offset),
+                'limit': str(limit)}
+        data = urllib.parse.urlencode(data)
+        full_url = ampache_url + '?' + data
+        ampache_response = self.fetch_url(full_url, self.AMPACHE_API, 'deleted_songs')
+        if not ampache_response:
+            return False
+        return self.return_data(ampache_response)
+
+    def deleted_podcast_episodes(self, offset=0, limit=0):
+        """ deleted_podcast_episodes
+            MINIMUM_API_VERSION=500000
+
+            Returns deleted_podcast_episode
+
+            INPUTS
+            * offset      = (integer) //optional
+            * limit       = (integer) //optional
+        """
+        ampache_url = self.AMPACHE_URL + '/server/' + self.AMPACHE_API + '.server.php'
+        data = {'action': 'deleted_podcast_episodes',
+                'auth': self.AMPACHE_SESSION,
+                'offset': str(offset),
+                'limit': str(limit)}
+        data = urllib.parse.urlencode(data)
+        full_url = ampache_url + '?' + data
+        ampache_response = self.fetch_url(full_url, self.AMPACHE_API, 'deleted_podcast_episodes')
+        if not ampache_response:
+            return False
+        return self.return_data(ampache_response)
+
+
+    def deleted_videos(self, offset=0, limit=0):
+        """ deleted_videos
+            MINIMUM_API_VERSION=500000
+
+            Returns deleted_video
+
+            INPUTS
+            * offset      = (integer) //optional
+            * limit       = (integer) //optional
+        """
+        ampache_url = self.AMPACHE_URL + '/server/' + self.AMPACHE_API + '.server.php'
+        data = {'action': 'deleted_videos',
+                'auth': self.AMPACHE_SESSION,
+                'offset': str(offset),
+                'limit': str(limit)}
+        data = urllib.parse.urlencode(data)
+        full_url = ampache_url + '?' + data
+        ampache_response = self.fetch_url(full_url, self.AMPACHE_API, 'deleted_videos')
         if not ampache_response:
             return False
         return self.return_data(ampache_response)
